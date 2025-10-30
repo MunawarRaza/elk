@@ -1,0 +1,97 @@
+########## Install Zabbix On Redhat 9.4 ##########
+MySQL/Percona: 8.0.30-9.0.X
+
+Nginx: Latest
+
+PHP: 8.0.0 - 8.3.X
+
+PHP Extentions:
+	gd: 2.0.28
+	bcmath
+	ctype
+	libXML: 2.6.15
+	xmlreader
+	xmlwriter
+	session
+	sockets
+	mbstring
+	gettext
+	pgsql
+
+
+
+
+
+
+
+################### Install mysql ###################
+
+sudo dnf install mysql-server
+sudo systemctl start mysqld.service
+sudo mysql_secure_installation
+
+Password: Zabbix@321
+
+# mysql -uroot -p
+password
+mysql> create database zabbix character set utf8mb4 collate utf8mb4_bin;
+mysql> create user zabbix@localhost identified by 'Zabbix@321';
+mysql> grant all privileges on zabbix.* to zabbix@localhost;
+mysql> set global log_bin_trust_function_creators = 1;
+mysql> quit;
+
+
+################### Install php ###################
+$ sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+
+# Install Remi Repository
+sudo dnf -y install http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y
+
+# check the available PHP streams in the repository
+sudo dnf module list php -y
+
+# To enable anyother remi 
+sudo dnf module enable php:remi-8.2 -y
+
+# install php modules
+sudo dnf install php -y
+
+# install addional extentions
+sudo dnf install php-{ctype,xml,xmlreader,xmlwriter,session,mbstring,gettext,openssl,mysql,curl,mysqli}
+
+
+################### Install zabbix ###################
+
+a. Install Zabbix repository
+Disable Zabbix packages provided by EPEL, if you have it installed. Edit file /etc/yum.repos.d/epel.repo and add the following statement under [epel] block
+excludepkgs=zabbix*
+
+dnf update
+
+Install zabbix repo
+rpm -Uvh https://repo.zabbix.com/zabbix/7.0/rhel/9/x86_64/zabbix-release-7.0-5.el9.noarch.rpm
+
+b. Install Zabbix server, frontend, agent
+
+dnf install zabbix-server-mysql zabbix-web-mysql zabbix-nginx-conf zabbix-sql-scripts zabbix-selinux-policy zabbix-agent
+
+c. Import schema
+zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -uzabbix -p zabbix
+
+d. Configure the database for Zabbix server
+
+Edit file /etc/zabbix/zabbix_server.conf
+
+DBPassword=password
+
+e. Configure PHP for Zabbix frontend
+Edit file /etc/nginx/conf.d/zabbix.conf uncomment and set 'listen' and 'server_name' directives.
+# listen 8080;
+# server_name example.com;
+
+f. Start Zabbix server and agent processes
+systemctl restart zabbix-server zabbix-agent nginx php-fpm
+
+
+
+for i in $(docker image ls |awk '{print $1}'); do docker image rm -f $i; done

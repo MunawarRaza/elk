@@ -1,0 +1,15 @@
+services:
+  elastic-search:
+    image: docker.elastic.co/elasticsearch/elasticsearch
+    ports:
+    - 9200:9200
+    volumes:
+    - elasticsearch_data:/usr/share/elasticsearch/data
+    network:
+    - elastic_network
+
+volumes:
+  elasticsearch_data:
+
+networks:
+  elastic_network:
